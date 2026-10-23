@@ -39,6 +39,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
 .stats div{background:var(--p);padding:12px 16px;border-radius:6px;border:1px solid var(--ln);flex:1;min-width:120px;text-align:center}
 .stats b{display:block;font:600 24px Orbitron;color:var(--a);margin-top:4px}
 .hidden{display:none!important}
+.helper-btn{font-size:10px;color:var(--a);cursor:pointer;text-decoration:underline;margin-left:8px}
 </style>
 </head>
 <body>
@@ -53,7 +54,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
   <div id="step1" class="hero">
     <div class="lab">ÉTAPE 1 / 3</div>
     <h2>Configuration de la <b>scène</b></h2>
-    <p class="sub">Décris ton décor Lofi. L'IA générera une séquence d'images où seuls les éléments spécifiés bougent.</p>
+    <p class="sub">Décris ton décor Lofi. Plus ta description des mouvements est précise, plus la boucle sera vivante.</p>
     
     <label class="f">
       <span>🔑 Clé API Agnès</span>
@@ -62,12 +63,12 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
 
     <label class="f">
       <span>🎨 Décor principal (Prompt)</span>
-      <textarea id="basePrompt" placeholder="Ex: Cozy japanese room at night, raining outside the window, warm desk lamp, cat sleeping on a cushion, lofi hip hop aesthetic"></textarea>
+      <textarea id="basePrompt" placeholder="Ex: Traditional japanese house roof at sunset, rice paddies in the background, warm orange and pink sky, highly detailed, lofi aesthetic"></textarea>
     </label>
 
     <label class="f">
-      <span>✨ Éléments à animer</span>
-      <input type="text" id="animElements" placeholder="Ex: rain drops falling, steam rising from tea cup">
+      <span>✨ Éléments à animer <span class="helper-btn" onclick="formatPrompt()">[Utiliser mon format liste]</span></span>
+      <textarea id="animElements" placeholder="Ex: Sakura petals drifting slowly, fireflies glowing, water rippling, cat breathing..."></textarea>
     </label>
 
     <div style="display:flex;gap:16px;flex-wrap:wrap">
@@ -84,7 +85,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
         <select id="framesCount">
           <option value="24">24 images (1 sec)</option>
           <option value="48" selected>48 images (2 sec)</option>
-          <option value="96">96 images (4 sec - Fluide)</option>
+          <option value="96">96 images (4 sec - Très fluide)</option>
         </select>
       </label>
     </div>
@@ -99,7 +100,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
   <div id="step2" class="hero hidden">
     <div class="lab">ÉTAPE 2 / 3</div>
     <h2>Génération de la <b>séquence</b></h2>
-    <p class="sub">Téléchargement des images...</p>
+    <p class="sub">L'IA crée chaque image en conservant la composition identique...</p>
     
     <div class="bar"><i id="progressBar"></i></div>
     <div class="stats">
@@ -110,7 +111,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
 
     <div class="ft">
       <button class="btn" onclick="cancelGeneration()">■ Annuler</button>
-      <button id="btnAssemble" class="big hidden" onclick="assembleVideo()">🎬 Créer la Vidéo MP4</button>
+      <button id="btnAssemble" class="big hidden" onclick="assembleVideo()">🎬 Créer la Vidéo</button>
     </div>
   </div>
 
@@ -118,7 +119,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
   <div id="step3" class="hero hidden">
     <div class="lab">ÉTAPE 3 / 3</div>
     <h2>Création de la <b>Vidéo</b></h2>
-    <p class="sub">Conversion en cours... Le navigateur assemble les images frame par frame.</p>
+    <p class="sub">Assemblage des frames et création de la boucle parfaite.</p>
 
     <div class="preview-box">
       <canvas id="videoCanvas"></canvas>
@@ -127,7 +128,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
 
     <div class="stats">
       <div><span class="lab">Durée Boucle</span><b id="loopDuration">0s</b></div>
-      <div><span class="lab">Format</span><b>WebM/MP4</b></div>
+      <div><span class="lab">Format</span><b>WebM (HD)</b></div>
     </div>
 
     <div class="ft">
@@ -176,15 +177,22 @@ function showStep(n) {
   $('step3').classList.toggle('hidden', n !== 3);
 }
 
+// Petit utilitaire pour formater ton texte "liste" en phrase pour l'IA
+function formatPrompt() {
+  const text = $('animElements').value;
+  if(!text) return;
+  // Remplace les sauts de ligne par des virgules et nettoie
+  const formatted = text.split('\n').map(l => l.trim()).filter(l => l).join(', ');
+  $('animElements').value = formatted;
+  toast("Formatage appliqué !");
+}
+
 /* ═════════════════════════════════════════════════════════════════════
    CONVERSION IMAGE SANS CORS (ASTUCE CANVAS)
    ═════════════════════════════════════════════════════════════════════ */
 function loadImgToCanvas(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    // Important pour éviter le "tainted canvas" si le serveur le permet, 
-    // sinon on utilise l'astuce du blob ci-dessous si possible, 
-    // mais ici on force le chargement standard.
     img.crossOrigin = "Anonymous"; 
     img.onload = () => {
       const canvas = document.createElement('canvas');
@@ -193,11 +201,8 @@ function loadImgToCanvas(url) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
       try {
-        // Tente de convertir en DataURL
         resolve(canvas.toDataURL('image/jpeg', 0.9));
       } catch (e) {
-        // Si CORS bloque vraiment, on retourne l'URL directe (risqué pour video)
-        console.warn("CORS strict détecté, utilisation URL directe");
         resolve(url); 
       }
     };
@@ -210,7 +215,7 @@ function loadImgToCanvas(url) {
    APPEL API AGNÈS
    ═════════════════════════════════════════════════════════════════════ */
 async function generateSingleFrame(index, total) {
-  const prompt = `${state.basePrompt}. Subtle animation frame ${index} of ${total}. Focus: ${state.animElements}. CRITICAL: Keep exact same composition. No text.`;
+  const prompt = `${state.basePrompt}. Animation frame ${index}/${total}. Elements moving: ${state.animElements}. CRITICAL: Keep exact same composition, camera angle and lighting. Only specified elements move slightly.`;
   
   try {
     const response = await fetch(`${API_URL}/images/generations`, {
@@ -233,15 +238,11 @@ async function generateSingleFrame(index, total) {
 
     const data = await response.json();
     const imageUrl = data.data?.[0]?.url || data.data?.[0]?.b64_json;
-    
     if (!imageUrl) throw new Error("Pas d'URL");
 
-    // Conversion immédiate via Image Object pour bypasser fetch CORS restrictions
     const dataUrl = await loadImgToCanvas(imageUrl);
-    
     return { url: imageUrl, dataUrl: dataUrl, status: 'done' };
   } catch (error) {
-    console.error(`Erreur frame ${index}:`, error);
     return { url: null, dataUrl: null, status: 'error', error: error.message };
   }
 }
@@ -306,7 +307,7 @@ function renderGrid() {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   ASSEMBLAGE VIDÉO (CANVAS -> WEBSM/MP4 COMPATIBLE)
+   ASSEMBLAGE VIDÉO
    ═════════════════════════════════════════════════════════════════════ */
 async function assembleVideo() {
   showStep(3);
@@ -327,9 +328,6 @@ async function assembleVideo() {
 
   status.textContent = "Encodage vidéo...";
   
-  // Utilisation de MediaRecorder standard (WebM)
-  // Note: La plupart des lecteurs modernes lisent le WebM comme du MP4.
-  // Pour un vrai MP4 sans FFmpeg.wasm lourd, on reste sur WebM haute compatibilité.
   const stream = canvas.captureStream(fps);
   const recorder = new MediaRecorder(stream, { 
     mimeType: 'video/webm; codecs=vp9', 
@@ -345,7 +343,6 @@ async function assembleVideo() {
 
   recorder.start();
 
-  // Boucle de dessin
   for (let i = 0; i < validImages.length; i++) {
     const img = new Image();
     img.src = validImages[i].dataUrl;
@@ -363,7 +360,7 @@ async function assembleVideo() {
     ctx.globalAlpha = 1.0;
   }
   
-  // Frame finale identique à la première pour bouclage invisible
+  // Frame finale identique à la première
   const firstImg = new Image();
   firstImg.src = validImages[0].dataUrl;
   await new Promise(r => { firstImg.onload = r; });
@@ -379,9 +376,7 @@ async function assembleVideo() {
   
   const link = $('downloadLink');
   link.href = url;
-  // On nomme .mp4 pour tromper les lecteurs basiques, mais c'est du webm encapsulé
-  // Les navigateurs modernes le liront parfaitement.
-  link.download = `lofi-loop-${Date.now()}.webm`; 
+  link.download = `lofi-loop-sunset-${Date.now()}.webm`; 
   link.classList.remove('hidden');
   
   status.textContent = "✅ Vidéo prête !";
