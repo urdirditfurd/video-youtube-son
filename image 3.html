@@ -54,7 +54,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
   <div id="step1" class="hero">
     <div class="lab">ÉTAPE 1 / 3</div>
     <h2>Configuration de la <b>scène</b></h2>
-    <p class="sub">Décris ton décor Lofi. Plus ta description des mouvements est précise, plus la boucle sera vivante.</p>
+    <p class="sub">Décris ton décor Lofi. J'ai pré-rempli les champs avec ton idée d'herbes et de chat.</p>
     
     <label class="f">
       <span>🔑 Clé API Agnès</span>
@@ -63,12 +63,12 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
 
     <label class="f">
       <span>🎨 Décor principal (Prompt)</span>
-      <textarea id="basePrompt" placeholder="Ex: Traditional japanese house roof at sunset, rice paddies in the background, warm orange and pink sky, highly detailed, lofi aesthetic"></textarea>
+      <textarea id="basePrompt">Cozy japanese rooftop at sunset, dried herbs hanging from wooden beams in foreground, a fluffy cat sleeping on the roof tiles, warm golden hour lighting, lofi aesthetic, highly detailed, 4k</textarea>
     </label>
 
     <label class="f">
-      <span>✨ Éléments à animer <span class="helper-btn" onclick="formatPrompt()">[Utiliser mon format liste]</span></span>
-      <textarea id="animElements" placeholder="Ex: Sakura petals drifting slowly, fireflies glowing, water rippling, cat breathing..."></textarea>
+      <span>✨ Éléments à animer <span class="helper-btn" onclick="formatPrompt()">[Formater ma liste]</span></span>
+      <textarea id="animElements">Hanging herbs soft swinging motion (pendulum-like, very subtle), Sleeping cat slow breathing and tail twitch every 12 seconds</textarea>
     </label>
 
     <div style="display:flex;gap:16px;flex-wrap:wrap">
@@ -85,7 +85,7 @@ button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a)
         <select id="framesCount">
           <option value="24">24 images (1 sec)</option>
           <option value="48" selected>48 images (2 sec)</option>
-          <option value="96">96 images (4 sec - Très fluide)</option>
+          <option value="96">96 images (4 sec - Idéal pour le chat)</option>
         </select>
       </label>
     </div>
@@ -215,6 +215,7 @@ function loadImgToCanvas(url) {
    APPEL API AGNÈS
    ═════════════════════════════════════════════════════════════════════ */
 async function generateSingleFrame(index, total) {
+  // Prompt optimisé pour gérer les différentes vitesses de mouvement
   const prompt = `${state.basePrompt}. Animation frame ${index}/${total}. Elements moving: ${state.animElements}. CRITICAL: Keep exact same composition, camera angle and lighting. Only specified elements move slightly.`;
   
   try {
@@ -376,7 +377,7 @@ async function assembleVideo() {
   
   const link = $('downloadLink');
   link.href = url;
-  link.download = `lofi-loop-sunset-${Date.now()}.webm`; 
+  link.download = `lofi-loop-cat-${Date.now()}.webm`; 
   link.classList.remove('hidden');
   
   status.textContent = "✅ Vidéo prête !";
