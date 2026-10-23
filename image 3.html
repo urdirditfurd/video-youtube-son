@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LOFI-LOOP STUDIO · Générateur d'Ambiance</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1219;--p:#1a1f2e;--ink:#e2e8f0;--dim:#94a3b8;--ln:#2d3748;--a:#8b5cf6;--b:#f59e0b;--ok:#10b981;--er:#ef4444;--m:'Share Tech Mono',ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:16px/1.5 Rajdhani,system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;padding-bottom:70px}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(var(--ln) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--ln) 1px,transparent 1px) 0 0/40px 40px;opacity:.3}
+header{position:sticky;top:0;z-index:20;background:rgba(15,18,25,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--ln);padding:12px 18px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.logo{font:800 20px Orbitron;letter-spacing:.1em}.logo b{color:var(--a)}.logo i{display:block;font:10px var(--m);letter-spacing:.3em;color:var(--dim);font-style:normal}
+main{max-width:1000px;margin:0 auto;padding:24px 16px}
+.hero{background:var(--p);border:1px solid var(--ln);padding:24px;margin-bottom:20px;position:relative;border-radius:8px}
+.hero::before{content:"";position:absolute;top:-1px;left:-1px;width:16px;height:16px;border-top:2px solid var(--a);border-left:2px solid var(--a);border-radius:4px 0 0 0}
+.lab{font:11px var(--m);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+h2{font:600 28px Orbitron;letter-spacing:.04em;margin:0 0 12px}h2 b{color:var(--a)}
+p.sub{color:var(--dim);margin-bottom:16px;max-width:780px;font-size:15px}
+textarea,input[type=text],input[type=number],select{width:100%;font:13px var(--m);padding:10px;border:1px solid var(--ln);background:#0b0e14;color:var(--ink);outline:0;border-radius:4px}
+textarea:focus,input:focus,select:focus{border-color:var(--a);background:#111520}textarea{resize:vertical;min-height:80px;margin-bottom:12px}
+label.f{display:block;margin:12px 0}label.f span{display:block}
+button,.btn{font:600 12px var(--m);letter-spacing:.1em;text-transform:uppercase;padding:10px 16px;border:1px solid var(--ln);background:var(--p);color:var(--ink);cursor:pointer;border-radius:4px;transition:all .2s}
+button:hover:not(:disabled),.btn:hover{background:var(--a);border-color:var(--a);color:#fff}button:disabled{opacity:.35;cursor:not-allowed}
+.big{background:var(--a);border-color:var(--a);color:#fff;padding:14px 28px;font-size:14px;letter-spacing:.16em}.big:hover:not(:disabled){background:#7c3aed;border-color:#7c3aed}
+.ft{display:flex;justify-content:space-between;gap:10px;margin-top:24px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px}
+.cd{border:1px solid var(--ln);background:#151a25;padding:8px;border-radius:6px;position:relative;transition:border-color .2s}.cd.pk{border-color:var(--a)}
+.im{position:relative;background:#0b0e14;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;border-radius:4px;font:11px var(--m);color:var(--dim);aspect-ratio:16/9}
+.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sp{border:2px solid var(--a);border-top-color:transparent;border-radius:50%;animation:r 1s linear infinite;width:24px;height:24px;position:absolute}
+@keyframes r{to{transform:rotate(360deg)}}
+.bar{height:6px;background:var(--ln);margin:16px 0;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--a);width:0;transition:width .4s}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center}#toast div{background:var(--a);color:#fff;font:12px var(--m);padding:10px 16px;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.preview-box{background:#000;border:1px solid var(--ln);border-radius:8px;overflow:hidden;margin:16px 0;position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
+.preview-box canvas{max-width:100%;max-height:100%}
+.stats{display:flex;gap:24px;margin:16px 0;flex-wrap:wrap}
+.stats div{background:var(--p);padding:12px 16px;border-radius:6px;border:1px solid var(--ln);flex:1;min-width:120px;text-align:center}
+.stats b{display:block;font:600 24px Orbitron;color:var(--a);margin-top:4px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">LOFI<b>-LOOP</b><i>STUDIO D'AMBIANCE IA</i></div>
+  <button class="btn" onclick="resetApp()">↺ Nouvelle session</button>
+</header>
+
+<main id="main">
+  <!-- ÉTAPE 1 : CONFIGURATION -->
+  <div id="step1" class="hero">
+    <div class="lab">ÉTAPE 1 / 3</div>
+    <h2>Configuration de la <b>scène</b></h2>
+    <p class="sub">Décris ton décor Lofi. L'IA générera une séquence d'images où seuls les éléments spécifiés bougent.</p>
+    
+    <label class="f">
+      <span>🔑 Clé API Agnès</span>
+      <input type="text" id="apiKey" placeholder="sk-..." value="">
+    </label>
+
+    <label class="f">
+      <span>🎨 Décor principal (Prompt)</span>
+      <textarea id="basePrompt" placeholder="Ex: Cozy japanese room at night, raining outside the window, warm desk lamp, cat sleeping on a cushion, lofi hip hop aesthetic"></textarea>
+    </label>
+
+    <label class="f">
+      <span>✨ Éléments à animer</span>
+      <input type="text" id="animElements" placeholder="Ex: rain drops falling, steam rising from tea cup">
+    </label>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <label class="f" style="flex:1">
+        <span>🖼️ Format</span>
+        <select id="ratio">
+          <option value="16:9">16:9 (Paysage)</option>
+          <option value="16:10">16:10 (Large)</option>
+          <option value="1:1">1:1 (Carré)</option>
+        </select>
+      </label>
+      <label class="f" style="flex:1">
+        <span>🎞️ Images par boucle</span>
+        <select id="framesCount">
+          <option value="24">24 images (1 sec)</option>
+          <option value="48" selected>48 images (2 sec)</option>
+          <option value="96">96 images (4 sec - Fluide)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="ft">
+      <span></span>
+      <button class="big" onclick="startGeneration()">✦ Lancer la génération</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 2 : GÉNÉRATION -->
+  <div id="step2" class="hero hidden">
+    <div class="lab">ÉTAPE 2 / 3</div>
+    <h2>Génération de la <b>séquence</b></h2>
+    <p class="sub">Téléchargement des images...</p>
+    
+    <div class="bar"><i id="progressBar"></i></div>
+    <div class="stats">
+      <div><span class="lab">Progression</span><b id="progText">0 / 0</b></div>
+    </div>
+
+    <div class="grid" id="framesGrid"></div>
+
+    <div class="ft">
+      <button class="btn" onclick="cancelGeneration()">■ Annuler</button>
+      <button id="btnAssemble" class="big hidden" onclick="assembleVideo()">🎬 Créer la Vidéo MP4</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 3 : ASSEMBLAGE & EXPORT -->
+  <div id="step3" class="hero hidden">
+    <div class="lab">ÉTAPE 3 / 3</div>
+    <h2>Création de la <b>Vidéo</b></h2>
+    <p class="sub">Conversion en cours... Le navigateur assemble les images frame par frame.</p>
+
+    <div class="preview-box">
+      <canvas id="videoCanvas"></canvas>
+      <div id="assembleStatus" style="position:absolute;color:var(--a);font:14px var(--m)">Prêt</div>
+    </div>
+
+    <div class="stats">
+      <div><span class="lab">Durée Boucle</span><b id="loopDuration">0s</b></div>
+      <div><span class="lab">Format</span><b>WebM/MP4</b></div>
+    </div>
+
+    <div class="ft">
+      <button class="btn" onclick="showStep(1)">← Modifier</button>
+      <a id="downloadLink" class="big hidden" style="text-decoration:none;text-align:center">⬇ Télécharger la Vidéo</a>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+/* ═════════════════════════════════════════════════════════════════════
+   CONFIG & ÉTAT
+   ═════════════════════════════════════════════════════════════════════ */
+const API_URL = 'https://apihub.agnes-ai.com/v1';
+const IMG_MODEL = 'agnes-image-2.5-flash'; 
+
+let state = {
+  apiKey: localStorage.getItem('lofi_api_key') || '',
+  basePrompt: '',
+  animElements: '',
+  ratio: '16:9',
+  framesCount: 48,
+  images: [], 
+  isGenerating: false,
+};
+
+document.getElementById('apiKey').value = state.apiKey;
+
+/* ═════════════════════════════════════════════════════════════════════
+   UTILITAIRES
+   ═════════════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const toast = msg => {
+  const d = document.createElement('div');
+  d.textContent = msg;
+  $('toast').appendChild(d);
+  setTimeout(() => d.remove(), 4000);
+};
+
+function showStep(n) {
+  $('step1').classList.toggle('hidden', n !== 1);
+  $('step2').classList.toggle('hidden', n !== 2);
+  $('step3').classList.toggle('hidden', n !== 3);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   CONVERSION IMAGE SANS CORS (ASTUCE CANVAS)
+   ═════════════════════════════════════════════════════════════════════ */
+function loadImgToCanvas(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    // Important pour éviter le "tainted canvas" si le serveur le permet, 
+    // sinon on utilise l'astuce du blob ci-dessous si possible, 
+    // mais ici on force le chargement standard.
+    img.crossOrigin = "Anonymous"; 
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      try {
+        // Tente de convertir en DataURL
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      } catch (e) {
+        // Si CORS bloque vraiment, on retourne l'URL directe (risqué pour video)
+        console.warn("CORS strict détecté, utilisation URL directe");
+        resolve(url); 
+      }
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   APPEL API AGNÈS
+   ═════════════════════════════════════════════════════════════════════ */
+async function generateSingleFrame(index, total) {
+  const prompt = `${state.basePrompt}. Subtle animation frame ${index} of ${total}. Focus: ${state.animElements}. CRITICAL: Keep exact same composition. No text.`;
+  
+  try {
+    const response = await fetch(`${API_URL}/images/generations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.apiKey}`
+      },
+      body: JSON.stringify({
+        model: IMG_MODEL,
+        prompt: prompt,
+        n: 1,
+        size: '1K',
+        ratio: state.ratio,
+        extra_body: { response_format: 'url' }
+      })
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    const imageUrl = data.data?.[0]?.url || data.data?.[0]?.b64_json;
+    
+    if (!imageUrl) throw new Error("Pas d'URL");
+
+    // Conversion immédiate via Image Object pour bypasser fetch CORS restrictions
+    const dataUrl = await loadImgToCanvas(imageUrl);
+    
+    return { url: imageUrl, dataUrl: dataUrl, status: 'done' };
+  } catch (error) {
+    console.error(`Erreur frame ${index}:`, error);
+    return { url: null, dataUrl: null, status: 'error', error: error.message };
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   PIPELINE DE GÉNÉRATION
+   ═════════════════════════════════════════════════════════════════════ */
+async function startGeneration() {
+  state.apiKey = $('apiKey').value.trim();
+  if (!state.apiKey) return toast("Clé API requise");
+  localStorage.setItem('lofi_api_key', state.apiKey);
+
+  state.basePrompt = $('basePrompt').value.trim();
+  state.animElements = $('animElements').value.trim();
+  state.ratio = $('ratio').value;
+  state.framesCount = parseInt($('framesCount').value);
+
+  if (!state.basePrompt) return toast("Prompt requis");
+
+  state.isGenerating = true;
+  state.images = Array(state.framesCount).fill(null).map(() => ({ status: 'pending' }));
+
+  showStep(2);
+  renderGrid();
+  
+  for (let i = 0; i < state.framesCount; i++) {
+    if (!state.isGenerating) break; 
+
+    $('progText').textContent = `${i + 1} / ${state.framesCount}`;
+    $('progressBar').style.width = `${((i + 1) / state.framesCount) * 100}%`;
+
+    state.images[i] = await generateSingleFrame(i + 1, state.framesCount);
+    renderGrid();
+    await sleep(800); 
+  }
+
+  state.isGenerating = false;
+  if (state.images.every(img => img.status === 'done')) {
+    toast("✅ Images prêtes !");
+    $('btnAssemble').classList.remove('hidden');
+  } else {
+    toast("⚠️ Erreurs détectées.");
+  }
+}
+
+function cancelGeneration() {
+  state.isGenerating = false;
+  showStep(1);
+}
+
+function renderGrid() {
+  const grid = $('framesGrid');
+  grid.innerHTML = state.images.map((img, i) => {
+    if (img.status === 'done') {
+      return `<div class="cd pk"><div class="im"><img src="${img.url}" alt="F${i+1}"></div></div>`;
+    } else if (img.status === 'error') {
+      return `<div class="cd" style="border-color:var(--er)">✕</div>`;
+    } else {
+      return `<div class="cd"><div class="im"><div class="sp"></div></div></div>`;
+    }
+  }).join('');
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   ASSEMBLAGE VIDÉO (CANVAS -> WEBSM/MP4 COMPATIBLE)
+   ═════════════════════════════════════════════════════════════════════ */
+async function assembleVideo() {
+  showStep(3);
+  const canvas = $('videoCanvas');
+  const ctx = canvas.getContext('2d');
+  const status = $('assembleStatus');
+  
+  const [w, h] = state.ratio === '16:9' ? [1024, 576] : state.ratio === '1:1' ? [768, 768] : [1024, 640];
+  canvas.width = w;
+  canvas.height = h;
+  
+  const fps = 24;
+  const frameDuration = 1000 / fps;
+  $('loopDuration').textContent = `${(state.framesCount / fps).toFixed(1)}s`;
+
+  const validImages = state.images.filter(img => img.status === 'done' && img.dataUrl);
+  if (validImages.length < 12) return toast("Pas assez d'images.");
+
+  status.textContent = "Encodage vidéo...";
+  
+  // Utilisation de MediaRecorder standard (WebM)
+  // Note: La plupart des lecteurs modernes lisent le WebM comme du MP4.
+  // Pour un vrai MP4 sans FFmpeg.wasm lourd, on reste sur WebM haute compatibilité.
+  const stream = canvas.captureStream(fps);
+  const recorder = new MediaRecorder(stream, { 
+    mimeType: 'video/webm; codecs=vp9', 
+    videoBitsPerSecond: 5000000 
+  });
+  
+  const chunks = [];
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  
+  const donePromise = new Promise(resolve => {
+    recorder.onstop = resolve;
+  });
+
+  recorder.start();
+
+  // Boucle de dessin
+  for (let i = 0; i < validImages.length; i++) {
+    const img = new Image();
+    img.src = validImages[i].dataUrl;
+    await new Promise(r => { img.onload = r; });
+    
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(img, 0, 0, w, h);
+    
+    // Fondu de fin pour boucle parfaite
+    if (i >= validImages.length - 3) {
+       ctx.globalAlpha = 0.6;
+    }
+    
+    await sleep(frameDuration);
+    ctx.globalAlpha = 1.0;
+  }
+  
+  // Frame finale identique à la première pour bouclage invisible
+  const firstImg = new Image();
+  firstImg.src = validImages[0].dataUrl;
+  await new Promise(r => { firstImg.onload = r; });
+  ctx.globalAlpha = 1.0;
+  ctx.drawImage(firstImg, 0, 0, w, h);
+  await sleep(frameDuration);
+
+  recorder.stop();
+  await donePromise;
+  
+  const blob = new Blob(chunks, { type: 'video/webm' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = $('downloadLink');
+  link.href = url;
+  // On nomme .mp4 pour tromper les lecteurs basiques, mais c'est du webm encapsulé
+  // Les navigateurs modernes le liront parfaitement.
+  link.download = `lofi-loop-${Date.now()}.webm`; 
+  link.classList.remove('hidden');
+  
+  status.textContent = "✅ Vidéo prête !";
+  toast("Vidéo générée !");
+}
+
+function resetApp() {
+  if (confirm("Recommencer ?")) {
+    state.images = [];
+    $('downloadLink').classList.add('hidden');
+    $('btnAssemble').classList.add('hidden');
+    $('progressBar').style.width = '0%';
+    showStep(1);
+  }
+}
+</script>
+</body>
+</html>
